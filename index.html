@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="燃脂计划">
+<meta name="theme-color" content="#0a0a0c">
+<title>每日燃脂计划</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script>
+// Generate app icon dynamically as apple-touch-icon
+(function(){
+  const c=document.createElement('canvas');c.width=180;c.height=180;
+  const ctx=c.getContext('2d');
+  // Background
+  ctx.fillStyle='#0a0a0c';ctx.beginPath();ctx.roundRect(0,0,180,180,36);ctx.fill();
+  // Flame icon
+  ctx.save();ctx.translate(90,85);ctx.scale(1.2,1.2);
+  ctx.fillStyle='#ff6b35';
+  ctx.beginPath();
+  ctx.moveTo(0,-40);
+  ctx.bezierCurveTo(15,-25,30,-5,30,15);
+  ctx.bezierCurveTo(30,32,17,45,0,45);
+  ctx.bezierCurveTo(-17,45,-30,32,-30,15);
+  ctx.bezierCurveTo(-30,-5,-15,-25,0,-40);
+  ctx.fill();
+  // Inner flame
+  ctx.fillStyle='#fbbf24';
+  ctx.beginPath();
+  ctx.moveTo(0,-10);
+  ctx.bezierCurveTo(8,-2,16,8,16,18);
+  ctx.bezierCurveTo(16,27,9,35,0,35);
+  ctx.bezierCurveTo(-9,35,-16,27,-16,18);
+  ctx.bezierCurveTo(-16,8,-8,-2,0,-10);
+  ctx.fill();
+  ctx.restore();
+  // Text
+  ctx.fillStyle='#e8e6e3';ctx.font='bold 18px sans-serif';ctx.textAlign='center';
+  ctx.fillText('燃脂',90,155);
+  // Set as icon
+  const link=document.createElement('link');
+  link.rel='apple-touch-icon';link.href=c.toDataURL('image/png');
+  document.head.appendChild(link);
+  // Also set favicon
+  const fav=document.createElement('link');
+  fav.rel='icon';fav.href=c.toDataURL('image/png');
+  document.head.appendChild(fav);
+})();
+
+// Inline manifest via blob URL
+(function(){
+  const manifest={
+    name:'每日燃脂计划',
+    short_name:'燃脂计划',
+    start_url:'.',
+    display:'standalone',
+    background_color:'#0a0a0c',
+    theme_color:'#0a0a0c',
+    icons:[{src:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a0a0c%22/><text x=%2250%22 y=%2265%22 text-anchor=%22middle%22 font-size=%2250%22>🔥</text></svg>',sizes:'any',type:'image/svg+xml'}]
+  };
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  const link=document.createElement('link');
+  link.rel='manifest';link.href=URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
+</script>
+<style>
+:root {
+  --bg: #0a0a0c;
+  --surface: #141418;
+  --surface2: #1c1c22;
+  --border: #2a2a33;
+  --text: #e8e6e3;
+  --text-dim: #8a8892;
+  --accent: #ff6b35;
+  --accent-glow: rgba(255,107,53,0.25);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.15);
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --blue: #60a5fa;
+  --radius: 16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{overflow:hidden;height:100%}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);height:100%;overflow-y:auto;overflow-x:hidden;-webkit-font-smoothing:antialiased;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
+
+/* TAB BAR */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--surface);border-top:1px solid var(--border);z-index:300;padding-bottom:env(safe-area-inset-bottom)}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 6px;cursor:pointer;color:var(--text-dim);font-size:10px;font-weight:500;transition:color .2s;gap:3px}
+.tab-item.active{color:var(--accent)}
+.tab-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* HEADER */
+.header{padding:20px 20px 0;position:relative}
+.header::after{content:'';position:absolute;top:0;left:50%;width:200px;height:200px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);transform:translateX(-50%);pointer-events:none}
+.greeting{font-size:13px;color:var(--text-dim);font-weight:300;letter-spacing:1px}
+.title-row{display:flex;align-items:baseline;gap:10px;margin-top:4px}
+.title{font-size:28px;font-weight:900;letter-spacing:-.5px}
+.day-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px}
+.day-badge.cardio{background:rgba(96,165,250,.15);color:var(--blue)}
+.day-badge.strength{background:rgba(251,191,36,.15);color:var(--yellow)}
+.day-badge.rest{background:var(--green-dim);color:var(--green)}
+
+/* WEEK STRIP */
+.week-strip{display:flex;gap:6px;padding:16px 20px;overflow-x:auto;scrollbar-width:none}
+.week-strip::-webkit-scrollbar{display:none}
+.week-day{flex:1;min-width:44px;text-align:center;padding:8px 4px;border-radius:12px;cursor:pointer;transition:all .2s;position:relative}
+.week-day .wd-label{font-size:11px;color:var(--text-dim);font-weight:400}
+.week-day .wd-num{font-size:18px;font-weight:700;margin-top:2px}
+.week-day.today{background:var(--surface2)}
+.week-day.today .wd-num{color:var(--accent)}
+.week-day.checked::after{content:'✓';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--green)}
+.week-day.skipped::after{content:'假';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--yellow)}
+.week-day.selected{background:var(--accent)}
+.week-day.selected .wd-label,.week-day.selected .wd-num{color:#fff}
+.week-day.selected::after{color:#fff}
+
+/* CONTENT */
+.content{padding:0 20px 140px}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.section-title{font-size:13px;color:var(--text-dim);font-weight:500;margin-bottom:12px;text-transform:uppercase;letter-spacing:1.5px}
+
+/* EXERCISE */
+.exercise{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)}
+.exercise:last-child{border-bottom:none}
+.exercise-icon{width:48px;height:48px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.exercise-icon svg{width:28px;height:28px}
+.exercise-info{flex:1}
+.exercise-name{font-size:15px;font-weight:700;margin-bottom:3px}
+.exercise-desc{font-size:12px;color:var(--text-dim);line-height:1.5}
+.exercise-tag{display:inline-block;margin-top:5px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:500;background:rgba(255,107,53,.1);color:var(--accent)}
+
+/* EXERCISE COMPLETED STATE */
+.exercise.completed{opacity:.4}
+.exercise.completed .exercise-name{text-decoration:line-through}
+
+/* ROUND HEADER */
+.round-header{font-size:12px;color:var(--accent);font-weight:700;padding:10px 0 4px;letter-spacing:1px;text-align:center}
+
+/* INLINE EXERCISE START BUTTON */
+.ex-start-btn{width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);background:transparent;color:var(--accent);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:center;transition:all .15s}
+.ex-start-btn:active{transform:scale(.9)}
+.ex-start-btn.running{background:var(--accent);color:#fff;animation:pulse 1.5s infinite}
+.ex-start-btn.resting{background:var(--green);border-color:var(--green);color:#fff;animation:pulse 1.5s infinite}
+.ex-start-btn.done-btn{background:var(--green);border-color:var(--green);color:#fff;opacity:.5;pointer-events:none}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,107,53,.4)}50%{box-shadow:0 0 0 8px rgba(255,107,53,0)}}
+
+/* INLINE TIMER DISPLAY */
+.ex-inline-timer{font-size:11px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.ex-inline-timer.work-color{color:var(--accent)}
+.ex-inline-timer.rest-color{color:var(--green)}
+
+/* VIEWING BANNER */
+.viewing-banner{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text-dim)}
+.viewing-banner button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer}
+
+/* (inline timers use .ex-start-btn and .ex-inline-timer instead) */
+
+/* ACTION BAR */
+.action-bar{position:fixed;bottom:52px;left:0;right:0;padding:10px 20px 0;background:linear-gradient(transparent,var(--bg) 30%);display:flex;gap:10px;z-index:100}
+.action-btn{flex:1;padding:14px;border-radius:14px;border:none;font-family:'Noto Sans SC',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s}
+.action-btn:active{transform:scale(.97)}
+.btn-checkin{background:var(--accent);color:#fff}
+.btn-checkin.done{background:var(--green)}
+.btn-skip{background:var(--surface2);color:var(--text-dim);border:1px solid var(--border)}
+
+/* STATS ROW */
+.stats-row{display:flex;gap:10px;margin-bottom:14px}
+.stat-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-num{font-size:24px;font-weight:900;color:var(--accent)}
+.stat-label{font-size:11px;color:var(--text-dim);margin-top:2px}
+
+/* SAFETY */
+.safety-note{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--red);line-height:1.6;margin-bottom:14px}
+.safety-note strong{font-weight:700}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:400;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:max(24px,env(safe-area-inset-bottom));animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:16px}
+.modal p{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:16px}
+.modal-btns{display:flex;gap:10px}
+.modal-btns .action-btn{padding:12px}
+
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== STATS PAGE ===== */
+.stats-page{padding:20px 20px 140px}
+.stats-page .header{padding:0 0 16px}
+.year-selector{display:flex;align-items:center;gap:16px;justify-content:center;margin-bottom:20px}
+.year-selector button{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.year-selector button:active{transform:scale(.92)}
+.year-selector .year-label{font-size:22px;font-weight:900;min-width:70px;text-align:center}
+
+/* LAST 7 DAYS */
+.last7{display:flex;gap:6px;margin-bottom:6px}
+.last7-day{flex:1;text-align:center;padding:10px 4px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
+.last7-day .l7-date{font-size:10px;color:var(--text-dim)}
+.last7-day .l7-dot{width:20px;height:20px;border-radius:50%;margin:6px auto 0;border:2px solid var(--border)}
+.last7-day .l7-dot.done{background:var(--green);border-color:var(--green)}
+.last7-day .l7-dot.skip{background:var(--yellow);border-color:var(--yellow)}
+.last7-day .l7-dot.rest-dot{background:var(--surface2);border-color:var(--border)}
+.last7-day .l7-label{font-size:9px;color:var(--text-dim);margin-top:4px}
+
+/* CHART */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.chart-card .section-title{margin-bottom:8px}
+.chart-svg{width:100%;display:block}
+.chart-summary{display:flex;justify-content:space-around;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.chart-summary-item{text-align:center}
+.chart-summary-val{font-size:20px;font-weight:900;color:var(--accent)}
+.chart-summary-label{font-size:10px;color:var(--text-dim);margin-top:2px}
+
+/* RANGE SELECTOR */
+.range-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.range-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .2s}
+.range-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.range-btn:active{transform:scale(.95)}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ===== DATA =====
+const EXERCISES_A = [
+  { name:'原地踏步 + 手臂画圈', desc:'热身激活，唤醒身体', tag:'热身 · 2分钟', icon:'warmup', phase:'warmup' },
+  { name:'跑步机快走/慢跑', desc:'速度 5.5–6.5 km/h，保持能说话但不能唱歌的强度。可中间穿插 5 分钟无绳跳绳增加趣味', tag:'有氧 · 20分钟', icon:'treadmill', phase:'main' },
+  { name:'拉伸放松', desc:'重点拉大腿前后侧和小腿，每个动作保持 20–30 秒', tag:'拉伸 · 5分钟', icon:'stretch', phase:'cooldown' }
+];
+const EXERCISES_B = [
+  { name:'原地踏步', desc:'热身激活', tag:'热身 · 2分钟', icon:'warmup', phase:'warmup' },
+  { name:'自重深蹲', desc:'大腿平行地面即可，全程正常呼吸不憋气', tag:'40秒做 + 20秒休息', icon:'squat', phase:'main' },
+  { name:'弹力带侧步走', desc:'8字弹力带套在脚踝，半蹲横向走，练臀和大腿外侧', tag:'40秒做 + 20秒休息', icon:'lateral', phase:'main' },
+  { name:'跪姿俯卧撑', desc:'在瑜伽垫上完成，降低难度，减少心脏负荷', tag:'40秒做 + 20秒休息', icon:'pushup', phase:'main' },
+  { name:'超人式', desc:'俯卧，双手双脚同时微微抬离地面，保持 2–3 秒后放下，练后背', tag:'40秒做 + 20秒休息', icon:'superman', phase:'main' },
+  { name:'臀桥', desc:'仰卧，弹力带套在膝盖上方增加阻力，抬臀发力', tag:'40秒做 + 20秒休息', icon:'bridge', phase:'main' },
+  { name:'死虫式', desc:'仰卧，对侧手脚交替伸展，练核心，动作放慢，呼吸均匀', tag:'40秒做 + 20秒休息', icon:'deadbug', phase:'main' },
+  { name:'拉伸放松', desc:'全身拉伸，重点放松刚才训练的肌群', tag:'拉伸 · 2分钟', icon:'stretch', phase:'cooldown' }
+];
+const EXERCISES_REST = [
+  { name:'轻松散步或瑜伽拉伸', desc:'主动恢复，15–20 分钟即可，也可以完全休息', tag:'可选 · 15-20分钟', icon:'stretch', phase:'rest' }
+];
+
+function getExerciseIcon(type) {
+  const c = 'var(--accent)';
+  const icons = {
+    warmup:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><circle cx="14" cy="6" r="3"/><path d="M14 11v6m-4 7l4-4 4 4m-8-8l4 1 4-1"/></svg>`,
+    treadmill:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="18" width="22" height="3" rx="1.5"/><path d="M7 18l2-5 3 2 3-6 3 4 2-3"/><circle cx="10" cy="7" r="2.5"/></svg>`,
+    stretch:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><circle cx="14" cy="5" r="2.5"/><path d="M14 9v5m-5 8l5-4 5 4M9 13c2 1 4 1 5 0s3-1 5 0"/></svg>`,
+    squat:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><circle cx="14" cy="5" r="2.5"/><path d="M14 9v4m-3 0h6m-6 0l-2 6m8-6l2 6m-8-6v4m6-4v4"/></svg>`,
+    lateral:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><circle cx="14" cy="5" r="2.5"/><path d="M14 9v5m-4 7h8m-8 0l1-4m7 4l-1-4"/><path d="M6 14h4m8 0h4" stroke-dasharray="2 2"/></svg>`,
+    pushup:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><path d="M8 14l6 2h8m-14 2l2 4m8-4l2 4"/></svg>`,
+    superman:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><ellipse cx="14" cy="16" rx="7" ry="2"/><path d="M4 12l4-2m20-2l-4 2M8 14l-2 5m12-5l2 5"/></svg>`,
+    bridge:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><path d="M4 20h20M8 20v-3c0-3 3-5 6-5s6 2 6 5v3"/><path d="M10 20l1-4m6 4l1-4" stroke-dasharray="2 2"/></svg>`,
+    deadbug:`<svg viewBox="0 0 28 28" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"><circle cx="14" cy="14" r="3"/><path d="M11 11l-4-4m10 4l4-4m-10 10l-4 4m10-4l4 4"/></svg>`
+  };
+  return icons[type]||icons.warmup;
+}
+
+// ===== STORAGE =====
+function getStore(){try{return JSON.parse(localStorage.getItem('workout_data')||'{}')}catch{return {}}}
+function saveStore(d){localStorage.setItem('workout_data',JSON.stringify(d))}
+function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+
+// ===== SCHEDULE =====
+function getScheduleForWeek(weekStart){
+  const store=getStore(),skips=store.skips||{},schedule={};
+  // All 7 days are candidates; skipped days are marked S
+  const skippedIndices=[];
+  for(let i=0;i<7;i++){const d=new Date(weekStart);d.setDate(d.getDate()+i);if(skips[dateKey(d)])skippedIndices.push(i)}
+  // Fill 5 workout slots (A/B/A/B/A) into non-skipped days in order; rest get 'R'
+  const available=[0,1,2,3,4,5,6].filter(i=>!skippedIndices.includes(i));
+  const workoutPattern=['A','B','A','B','A'];
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(d.getDate()+i);const dk=dateKey(d);
+    if(skippedIndices.includes(i)){schedule[dk]='S'}
+    else{
+      const si=available.indexOf(i);
+      schedule[dk]=si<workoutPattern.length?workoutPattern[si]:'R';
+    }
+  }
+  return schedule;
+}
+function getMonday(d){const date=new Date(d);const day=date.getDay();const diff=date.getDate()-day+(day===0?-6:1);date.setDate(diff);date.setHours(0,0,0,0);return date}
+function getTypeForDate(d){const monday=getMonday(d);const sched=getScheduleForWeek(monday);return sched[dateKey(d)]||'R'}
+
+function getStreak(){
+  const store=getStore(),checks=store.checks||{};
+  let streak=0;const d=new Date();d.setHours(0,0,0,0);
+  const todayType=getTypeForDate(d);
+  if(todayType!=='R'&&todayType!=='S'&&!checks[dateKey(d)]){d.setDate(d.getDate()-1)}
+  while(true){
+    const dk=dateKey(d),type=getTypeForDate(d);
+    if(type==='R'||type==='S'){d.setDate(d.getDate()-1);continue}
+    if(checks[dk]){streak++;d.setDate(d.getDate()-1)}else break;
+    if(streak>365)break;
+  }
+  return streak;
+}
+function getWeekCheckedCount(){
+  const store=getStore(),checks=store.checks||{},monday=getMonday(new Date());
+  let count=0;
+  for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(d.getDate()+i);if(checks[dateKey(d)])count++}
+  return count;
+}
+
+// ===== APP STATE =====
+let currentPage='home';
+let selectedDate=new Date();selectedDate.setHours(0,0,0,0);
+let statsYear=new Date().getFullYear();
+let statsRange='year'; // 'year' | 'half1' | 'half2' | 'q1' | 'q2' | 'q3' | 'q4' or month index '0'..'11'
+let timerState={
+  activeIndex:null,  // index in main exercises (0-5) currently timing
+  phase:'work',      // 'work' | 'rest'
+  seconds:40,
+  running:false,
+  interval:null,
+  currentRound:1,    // 1-3
+  completed:{}       // {0:true, 1:true, ...} per exercise index within current round
+};
+function getMainExercisesB(){return EXERCISES_B.filter(e=>e.phase==='main')}
+function allRoundDone(){
+  const mains=getMainExercisesB();
+  for(let i=0;i<mains.length;i++){if(!timerState.completed[i])return false}
+  return true;
+}
+
+// ===== NAV =====
+function switchPage(page){currentPage=page;render()}
+function selectDay(dateStr){selectedDate=new Date(dateStr+'T00:00:00');render()}
+function backToToday(){selectedDate=new Date();selectedDate.setHours(0,0,0,0);render()}
+
+// ===== RENDER HOME =====
+function renderHome(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayKey=dateKey(today);
+  const selKey=dateKey(selectedDate);
+  const isViewingToday=selKey===todayKey;
+
+  const monday=getMonday(selectedDate);
+  const schedule=getScheduleForWeek(monday);
+  const viewType=schedule[selKey]||'R';
+  const store=getStore(),checks=store.checks||{},skips=store.skips||{};
+  const streak=getStreak(),weekCount=getWeekCheckedCount();
+
+  const dayNames=['一','二','三','四','五','六','日'];
+  const typeLabel={A:'有氧日',B:'抗阻日',R:'休息日',S:'请假'};
+  const typeBadgeClass={A:'cardio',B:'strength',R:'rest',S:'rest'};
+
+  let exercises=[];
+  if(viewType==='A')exercises=EXERCISES_A;
+  else if(viewType==='B')exercises=EXERCISES_B;
+  else exercises=EXERCISES_REST;
+
+  const isChecked=checks[selKey];
+  const isSkipped=skips[selKey];
+  const isWorkoutDay=viewType==='A'||viewType==='B';
+
+  const selMonth=selectedDate.getMonth()+1;
+  const selDay=selectedDate.getDate();
+  const weekDayLabels=['日','一','二','三','四','五','六'];
+
+  let html='';
+
+  // Header
+  html+=`<div class="header">
+    <div class="greeting">${isViewingToday?'TODAY\'S WORKOUT':`${selMonth}月${selDay}日 周${weekDayLabels[selectedDate.getDay()]}`}</div>
+    <div class="title-row">
+      <div class="title">${typeLabel[viewType]}</div>
+      <span class="day-badge ${typeBadgeClass[viewType]}">
+        ${viewType==='A'?'Day A · 28min':viewType==='B'?'Day B · 28min':viewType==='S'?'已请假':'恢复日'}
+      </span>
+    </div>
+  </div>`;
+
+  // Week strip
+  html+=`<div class="week-strip">`;
+  for(let i=0;i<7;i++){
+    const d=new Date(monday);d.setDate(d.getDate()+i);
+    const dk=dateKey(d);
+    const isSel=dk===selKey;
+    const isToday_=dk===todayKey;
+    let cls='week-day';
+    if(isToday_)cls+=' today';
+    if(isSel)cls+=' selected';
+    if(checks[dk])cls+=' checked';
+    if(skips[dk])cls+=' skipped';
+    html+=`<div class="${cls}" onclick="selectDay('${dk}')">
+      <div class="wd-label">周${dayNames[i]}</div>
+      <div class="wd-num">${d.getDate()}</div>
+    </div>`;
+  }
+  html+=`</div>`;
+
+  html+=`<div class="content fade-in">`;
+
+  // Viewing other day banner
+  if(!isViewingToday){
+    html+=`<div class="viewing-banner">
+      <span>正在查看 ${selMonth}月${selDay}日 的计划</span>
+      <button onclick="backToToday()">回到今天</button>
+    </div>`;
+  }
+
+  // Stats (today only)
+  if(isViewingToday){
+    html+=`<div class="stats-row">
+      <div class="stat-card"><div class="stat-num"><span style="margin-right:4px">🔥</span>${streak}</div><div class="stat-label">连续打卡</div></div>
+      <div class="stat-card"><div class="stat-num">${weekCount}/5</div><div class="stat-label">本周完成</div></div>
+    </div>`;
+    html+=`<div class="safety-note"><strong>⚠️ 心脏安全提醒：</strong>运动时如感到胸闷、气短、头晕，请立即停下休息。心率控制在最大心率的 60%–70%。</div>`;
+  }
+
+  // Exercises
+  if(viewType==='B'){
+    const warmups=exercises.filter(e=>e.phase==='warmup');
+    const mains=exercises.filter(e=>e.phase==='main');
+    const cooldowns=exercises.filter(e=>e.phase==='cooldown');
+
+    html+=`<div class="section"><div class="section-title">训练动作</div>`;
+    // Warmup
+    warmups.forEach(ex=>{
+      html+=`<div class="exercise">
+        <div class="exercise-icon">${getExerciseIcon(ex.icon)}</div>
+        <div class="exercise-info">
+          <div class="exercise-name">${ex.name}</div>
+          <div class="exercise-desc">${ex.desc}</div>
+          <span class="exercise-tag">${ex.tag}</span>
+        </div>
+      </div>`;
+    });
+    // Round indicator (centered)
+    const allDone=timerState.currentRound>3;
+    html+=`<div class="round-header" id="round-indicator">${allDone?'🎉 全部完成！':'—— 第 '+timerState.currentRound+'/3 轮 ——'}</div>`;
+    // Main exercises (single list)
+    mains.forEach((ex,ei)=>{
+      const isDone=!!timerState.completed[ei];
+      const isActive=timerState.activeIndex===ei;
+      const isRunning=isActive&&timerState.running;
+      const isWork=isActive&&timerState.phase==='work';
+      const isRest=isActive&&timerState.phase==='rest';
+
+      let btnClass='ex-start-btn';
+      let btnContent='▶';
+      if(isDone){btnClass+=' done-btn';btnContent='✓'}
+      else if(isRunning&&isWork){btnClass+=' running';btnContent=timerState.seconds}
+      else if(isRunning&&isRest){btnClass+=' resting';btnContent=timerState.seconds}
+      else if(isActive&&!timerState.running){btnClass+=' running';btnContent='⏸'}
+
+      let inlineTimer='';
+      if(isActive&&!isDone){
+        const colorClass=isWork?'work-color':'rest-color';
+        const phaseLabel=isWork?'🏋️ 运动中':'😮‍💨 休息中';
+        inlineTimer=`<div class="ex-inline-timer ${colorClass}" id="ex-timer-${ei}">${phaseLabel} ${timerState.seconds}s</div>`;
+      }
+
+      html+=`<div class="exercise ${isDone?'completed':''}" id="ex-row-${ei}">
+        <div class="exercise-icon">${getExerciseIcon(ex.icon)}</div>
+        <div class="exercise-info">
+          <div class="exercise-name">${ex.name}</div>
+          <div class="exercise-desc">${ex.desc}</div>
+          <span class="exercise-tag">${ex.tag}</span>
+          ${inlineTimer}
+        </div>
+        <button class="${btnClass}" id="ex-btn-${ei}" onclick="startExTimer(${ei})">${btnContent}</button>
+      </div>`;
+    });
+    // Cooldown
+    cooldowns.forEach(ex=>{
+      html+=`<div class="exercise">
+        <div class="exercise-icon">${getExerciseIcon(ex.icon)}</div>
+        <div class="exercise-info">
+          <div class="exercise-name">${ex.name}</div>
+          <div class="exercise-desc">${ex.desc}</div>
+          <span class="exercise-tag">${ex.tag}</span>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  } else {
+    // Day A, Rest, Skip, or viewing other day: simple list
+    html+=`<div class="section"><div class="section-title">${viewType==='R'||viewType==='S'?'今日建议':'训练动作'}</div>`;
+    exercises.forEach(ex=>{
+      html+=`<div class="exercise">
+        <div class="exercise-icon">${getExerciseIcon(ex.icon)}</div>
+        <div class="exercise-info">
+          <div class="exercise-name">${ex.name}</div>
+          <div class="exercise-desc">${ex.desc}</div>
+          <span class="exercise-tag">${ex.tag}</span>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  html+=`</div>`;
+
+  // Action bar (today + workout day only)
+  if(isViewingToday&&isWorkoutDay&&!isSkipped){
+    html+=`<div class="action-bar">
+      <button class="action-btn btn-skip" onclick="showSkipModal()">请假</button>
+      <button class="action-btn btn-checkin ${isChecked?'done':''}" onclick="toggleCheckin()">${isChecked?'✓ 已打卡':'打卡完成'}</button>
+    </div>`;
+  } else if(isViewingToday&&isSkipped){
+    html+=`<div class="action-bar">
+      <button class="action-btn btn-skip" onclick="cancelSkip()">取消请假</button>
+    </div>`;
+  }
+
+  // Modal
+  html+=`<div class="modal-overlay" id="skipModal">
+    <div class="modal">
+      <h3>📋 请假确认</h3>
+      <p>请假后，今天的训练将跳过，本周剩余的训练安排会自动顺延重新分配（保持 A/B 交替，每周共 5 练 2 休）。</p>
+      <div class="modal-btns">
+        <button class="action-btn btn-skip" onclick="hideSkipModal()">取消</button>
+        <button class="action-btn btn-checkin" onclick="confirmSkip()">确认请假</button>
+      </div>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+// ===== RENDER STATS =====
+function renderStats(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayKey=dateKey(today);
+  const store=getStore(),checks=store.checks||{},skips=store.skips||{};
+  const streak=getStreak();
+
+  let html=`<div class="stats-page fade-in">`;
+
+  html+=`<div class="header">
+    <div class="greeting">STATISTICS</div>
+    <div class="title-row"><div class="title">打卡统计</div></div>
+  </div>`;
+
+  // Year selector
+  html+=`<div class="year-selector">
+    <button onclick="changeYear(-1)">‹</button>
+    <div class="year-label">${statsYear}</div>
+    <button onclick="changeYear(1)">›</button>
+  </div>`;
+
+  // Streak + total this year
+  let yearTotal=0;
+  for(const k in checks){if(k.startsWith(statsYear+'-'))yearTotal++}
+  html+=`<div class="stats-row">
+    <div class="stat-card"><div class="stat-num"><span style="margin-right:4px">🔥</span>${streak}</div><div class="stat-label">当前连续打卡</div></div>
+    <div class="stat-card"><div class="stat-num">${yearTotal}</div><div class="stat-label">${statsYear}年总打卡</div></div>
+  </div>`;
+
+  // Last 7 days
+  html+=`<div class="section"><div class="section-title">近 7 日</div><div class="last7">`;
+  for(let i=6;i>=0;i--){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const dk=dateKey(d);
+    const type=getTypeForDate(d);
+    const checked=checks[dk];
+    const skipped=skips[dk];
+    let dotClass='',label='';
+    if(checked){dotClass='done';label='✓'}
+    else if(skipped){dotClass='skip';label='假'}
+    else if(type==='R'){dotClass='rest-dot';label='休'}
+    else{dotClass='';label='✗'}
+    html+=`<div class="last7-day">
+      <div class="l7-date">${d.getMonth()+1}/${d.getDate()}</div>
+      <div class="l7-dot ${dotClass}"></div>
+      <div class="l7-label">${label}</div>
+    </div>`;
+  }
+  html+=`</div></div>`;
+
+  // Compute monthly data for chart
+  const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const monthData=[];
+  for(let m=0;m<12;m++){
+    const todayMonth=today.getFullYear()*12+today.getMonth();
+    const thisMonth=statsYear*12+m;
+    if(thisMonth>todayMonth){monthData.push(null);continue}
+    const daysInMonth=new Date(statsYear,m+1,0).getDate();
+    let totalWorkoutDays=0,checkedDays=0;
+    for(let day=1;day<=daysInMonth;day++){
+      const d=new Date(statsYear,m,day);
+      if(d>today)break;
+      const type=getTypeForDate(d);
+      const dk=dateKey(d);
+      if(type==='A'||type==='B'){totalWorkoutDays++;if(checks[dk])checkedDays++}
+    }
+    monthData.push({month:m,pct:totalWorkoutDays>0?Math.round((checkedDays/totalWorkoutDays)*100):0,checked:checkedDays,total:totalWorkoutDays});
+  }
+
+  // Filter by range
+  let rangeStart=0,rangeEnd=11;
+  if(statsRange==='year'){rangeStart=0;rangeEnd=11}
+  else if(statsRange==='half1'){rangeStart=0;rangeEnd=5}
+  else if(statsRange==='half2'){rangeStart=6;rangeEnd=11}
+  else if(statsRange==='q1'){rangeStart=0;rangeEnd=2}
+  else if(statsRange==='q2'){rangeStart=3;rangeEnd=5}
+  else if(statsRange==='q3'){rangeStart=6;rangeEnd=8}
+  else if(statsRange==='q4'){rangeStart=9;rangeEnd=11}
+
+  const visibleData=monthData.slice(rangeStart,rangeEnd+1);
+  const validData=visibleData.filter(d=>d!==null);
+
+  // Chart dimensions
+  const W=340,H=180,padL=36,padR=16,padT=20,padB=28;
+  const chartW=W-padL-padR,chartH=H-padT-padB;
+  const points=[];
+  visibleData.forEach((d,i)=>{
+    if(d===null)return;
+    const x=padL+(visibleData.length>1?(i/(visibleData.length-1))*chartW:chartW/2);
+    const y=padT+chartH-(d.pct/100)*chartH;
+    points.push({x,y,pct:d.pct,month:monthNames[rangeStart+i],checked:d.checked,total:d.total});
+  });
+
+  // Avg & summary
+  const avgPct=validData.length>0?Math.round(validData.reduce((s,d)=>s+d.pct,0)/validData.length):0;
+  const totalChecked=validData.reduce((s,d)=>s+d.checked,0);
+  const totalWorkout=validData.reduce((s,d)=>s+d.total,0);
+
+  // Build SVG line chart
+  let svg=`<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // Grid lines
+  for(let p=0;p<=100;p+=25){
+    const y=padT+chartH-(p/100)*chartH;
+    svg+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a2a33" stroke-width="0.5"/>`;
+    svg+=`<text x="${padL-6}" y="${y+3}" text-anchor="end" fill="#8a8892" font-size="9" font-family="'Noto Sans SC'">${p}%</text>`;
+  }
+  // X labels
+  visibleData.forEach((d,i)=>{
+    if(d===null)return;
+    const x=padL+(visibleData.length>1?(i/(visibleData.length-1))*chartW:chartW/2);
+    svg+=`<text x="${x}" y="${H-4}" text-anchor="middle" fill="#8a8892" font-size="9" font-family="'Noto Sans SC'">${monthNames[rangeStart+i]}</text>`;
+  });
+
+  if(points.length>1){
+    // Gradient fill
+    svg+=`<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff6b35" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#ff6b35" stop-opacity="0"/>
+    </linearGradient></defs>`;
+    // Area
+    let areaPath=`M${points[0].x},${points[0].y}`;
+    for(let i=1;i<points.length;i++){
+      const cp1x=points[i-1].x+(points[i].x-points[i-1].x)*0.4;
+      const cp2x=points[i].x-(points[i].x-points[i-1].x)*0.4;
+      areaPath+=` C${cp1x},${points[i-1].y} ${cp2x},${points[i].y} ${points[i].x},${points[i].y}`;
+    }
+    areaPath+=` L${points[points.length-1].x},${padT+chartH} L${points[0].x},${padT+chartH} Z`;
+    svg+=`<path d="${areaPath}" fill="url(#areaGrad)"/>`;
+    // Line
+    let linePath=`M${points[0].x},${points[0].y}`;
+    for(let i=1;i<points.length;i++){
+      const cp1x=points[i-1].x+(points[i].x-points[i-1].x)*0.4;
+      const cp2x=points[i].x-(points[i].x-points[i-1].x)*0.4;
+      linePath+=` C${cp1x},${points[i-1].y} ${cp2x},${points[i].y} ${points[i].x},${points[i].y}`;
+    }
+    svg+=`<path d="${linePath}" fill="none" stroke="#ff6b35" stroke-width="2.5" stroke-linecap="round"/>`;
+  }
+  // Dots + value labels
+  points.forEach(p=>{
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#ff6b35" stroke="#0a0a0c" stroke-width="2"/>`;
+    svg+=`<text x="${p.x}" y="${p.y-10}" text-anchor="middle" fill="#e8e6e3" font-size="10" font-weight="700" font-family="'Noto Sans SC'">${p.pct}%</text>`;
+  });
+  svg+=`</svg>`;
+
+  html+=`<div class="chart-card">
+    <div class="section-title">月度完成率趋势</div>
+    ${svg}
+    <div class="chart-summary">
+      <div class="chart-summary-item"><div class="chart-summary-val">${avgPct}%</div><div class="chart-summary-label">平均完成率</div></div>
+      <div class="chart-summary-item"><div class="chart-summary-val">${totalChecked}</div><div class="chart-summary-label">总打卡天数</div></div>
+      <div class="chart-summary-item"><div class="chart-summary-val">${totalWorkout}</div><div class="chart-summary-label">应练天数</div></div>
+    </div>
+  </div>`;
+
+  // Range selector
+  const ranges=[
+    {key:'year',label:'全年'},
+    {key:'half1',label:'上半年'},
+    {key:'half2',label:'下半年'},
+    {key:'q1',label:'Q1'},
+    {key:'q2',label:'Q2'},
+    {key:'q3',label:'Q3'},
+    {key:'q4',label:'Q4'}
+  ];
+  html+=`<div class="range-selector">`;
+  ranges.forEach(r=>{
+    html+=`<button class="range-btn ${statsRange===r.key?'active':''}" onclick="setRange('${r.key}')">${r.label}</button>`;
+  });
+  html+=`</div>`;
+
+  html+=`</div>`;
+  return html;
+}
+
+function changeYear(delta){
+  const thisYear=new Date().getFullYear();
+  const newYear=statsYear+delta;
+  if(newYear>thisYear||newYear<2020)return;
+  statsYear=newYear;statsRange='year';render();
+}
+function setRange(r){statsRange=r;render()}
+
+// ===== MASTER RENDER =====
+function render(){
+  let html='';
+  if(currentPage==='home')html=renderHome();
+  else html=renderStats();
+
+  // Tab bar
+  html+=`<div class="tab-bar">
+    <div class="tab-item ${currentPage==='home'?'active':''}" onclick="switchPage('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/><rect x="9" y="14" width="6" height="6"/></svg>
+      <span>训练</span>
+    </div>
+    <div class="tab-item ${currentPage==='stats'?'active':''}" onclick="switchPage('stats')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+      <span>统计</span>
+    </div>
+  </div>`;
+
+  document.getElementById('app').innerHTML=html;
+}
+
+// ===== ACTIONS =====
+function toggleCheckin(){
+  const store=getStore();if(!store.checks)store.checks={};
+  const dk=dateKey(new Date());
+  if(store.checks[dk])delete store.checks[dk];else store.checks[dk]=true;
+  saveStore(store);render();
+  if(navigator.vibrate)navigator.vibrate(30);
+}
+function showSkipModal(){document.getElementById('skipModal').classList.add('show')}
+function hideSkipModal(){document.getElementById('skipModal').classList.remove('show')}
+function confirmSkip(){
+  const store=getStore();if(!store.skips)store.skips={};
+  store.skips[dateKey(new Date())]=true;saveStore(store);hideSkipModal();render();
+}
+function cancelSkip(){
+  const store=getStore();if(!store.skips)store.skips={};
+  delete store.skips[dateKey(new Date())];saveStore(store);render();
+}
+
+// ===== TIMER =====
+function playBeep(freq){
+  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();const gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=freq;gain.gain.value=0.3;osc.start();osc.stop(ctx.currentTime+0.15)}catch(e){}
+  if(navigator.vibrate)navigator.vibrate(100);
+}
+
+// Targeted DOM update — no full re-render, no flicker
+function updateTimerUI(){
+  const idx=timerState.activeIndex;
+  if(idx===null)return;
+  const btn=document.getElementById('ex-btn-'+idx);
+  const timerEl=document.getElementById('ex-timer-'+idx);
+  if(btn){
+    btn.textContent=timerState.seconds;
+    if(timerState.phase==='work'){
+      btn.className='ex-start-btn running';
+    } else {
+      btn.className='ex-start-btn resting';
+    }
+  }
+  if(timerEl){
+    const phaseLabel=timerState.phase==='work'?'🏋️ 运动中':'😮‍💨 休息中';
+    timerEl.textContent=phaseLabel+' '+timerState.seconds+'s';
+    timerEl.className='ex-inline-timer '+(timerState.phase==='work'?'work-color':'rest-color');
+  }
+}
+
+function startExTimer(idx){
+  // If clicking the already-active timer, toggle pause/resume
+  if(timerState.activeIndex===idx){
+    if(timerState.running){
+      clearInterval(timerState.interval);timerState.running=false;
+    } else {
+      timerState.running=true;
+      timerState.interval=setInterval(tickExTimer,1000);
+    }
+    render();return;
+  }
+  // Stop any existing timer
+  if(timerState.interval)clearInterval(timerState.interval);
+  // Start new timer for this exercise
+  timerState.activeIndex=idx;
+  timerState.phase='work';
+  timerState.seconds=40;
+  timerState.running=true;
+  // Full render once to set up the DOM elements (button + inline timer)
+  render();
+  // Then start ticking with targeted updates
+  timerState.interval=setInterval(tickExTimer,1000);
+}
+
+function tickExTimer(){
+  timerState.seconds--;
+  if(timerState.seconds<0){
+    if(timerState.phase==='work'){
+      // Work phase done → rest phase
+      playBeep(880);
+      timerState.phase='rest';
+      timerState.seconds=20;
+      updateTimerUI();
+      return;
+    } else {
+      // Rest phase done → exercise complete
+      playBeep(660);
+      clearInterval(timerState.interval);
+      timerState.running=false;
+      timerState.completed[timerState.activeIndex]=true;
+      timerState.activeIndex=null;
+      // Check if all exercises in this round are done
+      if(allRoundDone()){
+        if(timerState.currentRound<3){
+          timerState.currentRound++;
+          timerState.completed={}; // reset for next round
+        } else {
+          timerState.currentRound=4; // signals all 3 rounds done
+        }
+      }
+      render();return;
+    }
+  }
+  // Normal tick — targeted update only, no flicker
+  updateTimerUI();
+}
+
+function resetAllTimers(){
+  if(timerState.interval)clearInterval(timerState.interval);
+  timerState={activeIndex:null,phase:'work',seconds:40,running:false,interval:null,currentRound:1,completed:{}};
+  render();
+}
+
+// ===== INIT =====
+render();
+</script>
+</body>
+</html>
